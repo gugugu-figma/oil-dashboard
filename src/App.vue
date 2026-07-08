@@ -196,7 +196,6 @@ const selectedTank = ref(null)
 const selectedMapCity = ref('')
 const drawerOpen = ref(false)
 const hoverInfo = ref(null)
-
 const tanks = [
   ['南阳市卧龙区光武街道石化路北段168号', '南阳市卧龙区', 487, 94, '大规模'],
   ['郑州市新郑市龙湖镇双湖大道与107国道交叉口', '郑州市新郑市', 452, 88, '大规模'],

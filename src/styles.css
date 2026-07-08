@@ -10,17 +10,20 @@ button, input, select { font: inherit; }
 button { cursor: pointer; }
 
 .dashboard-shell {
+  --dashboard-zoom: .75;
   width: 100vw;
   height: 100vh;
-  display: grid;
-  place-items: center;
+  position: relative;
   background: #030a18;
+  overflow: hidden;
 }
 .dashboard {
   position: relative;
-  width: 100vw;
-  height: 100vh;
+  width: calc(100vw / var(--dashboard-zoom));
+  height: calc(100vh / var(--dashboard-zoom));
   overflow: hidden;
+  transform: scale(var(--dashboard-zoom));
+  transform-origin: left top;
   background: url("/assets/figma/dashboard-bg.png") center / cover no-repeat;
   --screen-pad-x: clamp(12px, 1.25vw, 24px);
   --panel-top: 96px;
@@ -635,12 +638,18 @@ button { cursor: pointer; }
   filter: drop-shadow(0 0 10px rgba(20, 253, 254, .46));
   opacity: .95;
 }
-.bars-section { flex: 1.15; min-height: 0; }
-.donut-section { flex: .95; min-height: 0; }
+.bars-section { flex: 1.15; min-height: 0; display: flex; flex-direction: column; }
+.donut-section { flex: .95; min-height: 0; display: flex; flex-direction: column; }
 .bars-section .section-body,
 .donut-section .section-body,
 .right-panel > .section:first-child .section-body {
   min-height: 0;
+}
+.bars-section .section-body,
+.donut-section .section-body {
+  flex: 1;
+  display: flex;
+  padding-bottom: 10px;
 }
 .chart-host {
   width: 100%;
@@ -648,10 +657,12 @@ button { cursor: pointer; }
   border-radius: 4px;
 }
 .city-bar-chart {
-  height: clamp(250px, 34vh, 390px);
+  flex: 1;
+  height: 100%;
 }
 .scale-donut-chart {
-  height: clamp(220px, 28vh, 320px);
+  flex: 1;
+  height: 100%;
 }
 .trend-line-chart {
   height: clamp(150px, 20vh, 220px);
