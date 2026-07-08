@@ -40,13 +40,13 @@ function renderChart() {
       axisPointer: { type: 'shadow' },
       backgroundColor: 'rgba(3, 22, 41, 0.94)',
       borderColor: 'rgba(20, 253, 254, 0.55)',
-      textStyle: { color: '#d4f2ff', fontSize: 12 },
+      textStyle: { color: '#d4f2ff', fontSize: 14 },
       formatter: (params) => {
         const row = params[0]
         return `${row.name}<br/>罐区数量：<b style="color:#14fdfe">${row.value}</b> 个`
       }
     },
-    grid: { left: 58, right: 24, top: 6, bottom: 6, containLabel: false },
+    grid: { left: 82, right: 42, top: 8, bottom: 8, containLabel: false },
     xAxis: {
       type: 'value',
       max: Math.ceil(maxValue * 1.16),
@@ -58,13 +58,13 @@ function renderChart() {
       data: names,
       axisLine: { show: false },
       axisTick: { show: false },
-      axisLabel: { color: '#599ec2', fontSize: 11, width: 50, overflow: 'truncate' }
+      axisLabel: { color: '#599ec2', fontSize: 14, width: 74, overflow: 'truncate' }
     },
     series: [
       {
         type: 'bar',
         data: values.map(() => maxValue),
-        barWidth: 8,
+        barWidth: 10,
         barGap: '-100%',
         silent: true,
         itemStyle: {
@@ -77,12 +77,12 @@ function renderChart() {
         name: '罐区数量',
         type: 'bar',
         data: values,
-        barWidth: 8,
+        barWidth: 10,
         label: {
           show: true,
           position: 'right',
           color: '#d4f2ff',
-          fontSize: 10,
+          fontSize: 14,
           formatter: '{c}'
         },
         itemStyle: {

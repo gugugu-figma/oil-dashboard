@@ -47,16 +47,16 @@ function renderChart() {
       trigger: 'item',
       backgroundColor: 'rgba(3, 22, 41, 0.94)',
       borderColor: 'rgba(20, 253, 254, 0.55)',
-      textStyle: { color: '#d4f2ff', fontSize: 12 },
+      textStyle: { color: '#d4f2ff', fontSize: 14 },
       formatter: (item) => `${item.name}<br/>数量：<b style="color:#14fdfe">${item.value}</b> 个<br/>占比：${item.percent}%`
     },
     legend: {
       bottom: 6,
       left: 'center',
-      itemWidth: 8,
-      itemHeight: 8,
-      itemGap: 8,
-      textStyle: { color: '#d4f2ff', fontSize: 10 },
+      itemWidth: 10,
+      itemHeight: 10,
+      itemGap: 12,
+      textStyle: { color: '#d4f2ff', fontSize: 14 },
       formatter: (name) => {
         const item = chartItems.value.find((row) => row.name === name)
         return item ? `${name} ${item.count}个 ${item.percent}%` : name
@@ -70,7 +70,7 @@ function renderChart() {
         style: {
           text: String(props.total),
           fill: '#d4f2ff',
-          fontSize: 26,
+          fontSize: 32,
           fontWeight: 800,
           textAlign: 'center',
           textShadowColor: 'rgba(20,253,254,.55)',
@@ -84,7 +84,7 @@ function renderChart() {
         style: {
           text: '罐区总数',
           fill: '#599ec2',
-          fontSize: 11,
+          fontSize: 14,
           textAlign: 'center'
         }
       }
@@ -92,7 +92,7 @@ function renderChart() {
     series: [
       {
         type: 'pie',
-        radius: ['42%', '68%'],
+        radius: ['42%', '70%'],
         center: ['50%', '45%'],
         avoidLabelOverlap: true,
         label: { show: false },
