@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>成品油全链条税收监管平台 - 全省总览</title>
+<!-- ECharts 5.x CDN -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<!-- Font Awesome CDN -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #f5f7fa;
+  color: #333;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* ===== 顶部导航栏 ===== */
+.navbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: 60px; background: #0a2e5c;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.navbar .logo { display: flex; align-items: center; gap: 10px; }
+.navbar .logo i { font-size: 22px; color: #4da3ff; }
+.navbar .logo span {
+  color: #fff; font-size: 18px; font-weight: 600; letter-spacing: 2px;
+}
+
+/* ===== 三栏主布局 ===== */
+.main-container {
+  display: flex; height: calc(100vh - 60px); margin-top: 60px;
+  gap: 0; padding: 12px;
+}
+.left-panel   { width: 20%; min-width: 280px; display: flex; flex-direction: column; gap: 12px; }
+.center-panel { flex: 1;           display: flex; flex-direction: column; gap: 0; margin: 0 12px; }
+.right-panel  { width: 25%; min-width: 340px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+
+/* ===== 卡片样式 ===== */
+.card {
+  background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  overflow: hidden;
+}
+.card-header {
+  padding: 12px 16px; font-size: 14px; font-weight: 600; color: #1a1a2e;
+  border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 8px;
+}
+.card-header i { color: #1a73e8; font-size: 14px; }
+.card-body { padding: 12px 16px; }
+
+/* ===== 左侧面板 ===== */
+.left-panel .card:first-child { flex-shrink: 0; } /* 搜索筛选区域 */
+.left-panel .card:last-child  { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* 搜索筛选 */
+.search-box {
+  display: flex; align-items: center; gap: 6px;
+  background: #f5f7fa; border: 1px solid #e0e4ea; border-radius: 6px;
+  padding: 0 10px; margin-bottom: 10px;
+}
+.search-box i { color: #999; font-size: 13px; }
+.search-box input {
+  flex: 1; border: none; background: transparent; padding: 8px 0;
+  font-size: 13px; outline: none; color: #333;
+}
+.search-box input::placeholder { color: #bbb; }
+
+.filter-row { display: flex; gap: 8px; }
+.filter-row select {
+  flex: 1; padding: 6px 8px; font-size: 12px; border: 1px solid #e0e4ea;
+  border-radius: 4px; background: #fff; color: #555; outline: none;
+  cursor: pointer;
+}
+
+/* 罐区列表 */
+.tank-list-wrap { flex: 1; overflow-y: auto; }
+.tank-list-wrap table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.tank-list-wrap thead { position: sticky; top: 0; z-index: 2; }
+.tank-list-wrap thead th {
+  background: #f8f9fb; color: #666; font-weight: 600; font-size: 11px;
+  padding: 8px 6px; text-align: left; border-bottom: 2px solid #e8ecf2;
+  white-space: nowrap;
+}
+.tank-list-wrap tbody td {
+  padding: 7px 6px; border-bottom: 1px solid #f2f4f7;
+  white-space: nowrap; cursor: pointer; transition: background 0.15s;
+}
+.tank-list-wrap tbody tr:hover { background: #eef4ff; }
+.tank-list-wrap tbody tr.active { background: #dceafe; }
+.tank-list-wrap .addr-cell { max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
+.tank-list-wrap .scale-tag {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-size: 11px; font-weight: 500;
+}
+.tag-large  { background: #ffe8e4; color: #d54941; }
+.tag-medium { background: #fff3e0; color: #e67e22; }
+.tag-small  { background: #e8f5e9; color: #388e3c; }
+
+.list-footer {
+  padding: 10px 16px; font-size: 12px; color: #888;
+  border-top: 1px solid #f0f0f0; text-align: center; background: #fff;
+  flex-shrink: 0;
+}
+
+/* ===== 中间面板 - 地图区域 ===== */
+.map-container {
+  flex: 1; position: relative; background: #fff; border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden;
+}
+.map-container canvas { display: block; width: 100%; height: 100%; }
+
+/* 自定义 Tooltip */
+.map-tooltip {
+  position: absolute; pointer-events: none; z-index: 50;
+  background: rgba(10, 46, 92, 0.92); color: #fff;
+  padding: 8px 14px; border-radius: 6px; font-size: 13px;
+  white-space: nowrap; display: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.map-tooltip::after {
+  content: ''; position: absolute; top: 100%; left: 50%;
+  transform: translateX(-50%); border: 5px solid transparent;
+  border-top-color: rgba(10, 46, 92, 0.92);
+}
+.map-tooltip .tt-city { font-weight: 600; margin-bottom: 2px; }
+.map-tooltip .tt-count { font-size: 12px; opacity: 0.9; }
+
+.map-footer {
+  padding: 10px; text-align: center; font-size: 13px; color: #555; background: #fff;
+  border-radius: 0 0 8px 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  border-top: 1px solid #f0f0f0; flex-shrink: 0;
+}
+
+/* ===== 右侧面板 ===== */
+.stat-card {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 20px; background: #fff; border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.stat-icon {
+  width: 48px; height: 48px; border-radius: 10px;
+  background: linear-gradient(135deg, #1a73e8, #4da3ff);
+  display: flex; align-items: center; justify-content: center;
+}
+.stat-icon i { font-size: 22px; color: #fff; }
+.stat-info .stat-label { font-size: 12px; color: #999; margin-bottom: 4px; }
+.stat-info .stat-value { font-size: 28px; font-weight: 700; color: #1a1a2e; }
+
+.chart-box {
+  flex: 1; background: #fff; border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden;
+  display: flex; flex-direction: column; min-height: 260px;
+}
+.chart-box .chart-inner { flex: 1; min-height: 0; }
+
+/* ===== 滚动条美化 ===== */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d0d5dd; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #b0b5bd; }
+
+/* ===== 右侧面板 - 柱状图下方环形图 ===== */
+.right-panel .chart-box:last-child { min-height: 300px; }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部导航栏 ========== -->
+<nav class="navbar">
+  <div class="logo">
+    <i class="fa-solid fa-oil-can"></i>
+    <span>成品油全链条税收监管平台</span>
+  </div>
+</nav>
+
+<!-- ========== 三栏主体 ========== -->
+<div class="main-container">
+
+  <!-- ===== 左侧面板：罐区列表 ===== -->
+  <aside class="left-panel">
+    <!-- 搜索与筛选 -->
+    <div class="card">
+      <div class="card-body">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" placeholder="请输入详细地址">
+        </div>
+        <div class="filter-row">
+          <select>
+            <option selected>河南省全省</option>
+            <option>郑州市</option><option>洛阳市</option><option>南阳市</option>
+            <option>开封市</option><option>新乡市</option><option>安阳市</option>
+            <option>濮阳市</option><option>焦作市</option><option>商丘市</option>
+            <option>许昌市</option><option>周口市</option><option>驻马店市</option>
+            <option>信阳市</option><option>平顶山市</option><option>漯河市</option>
+            <option>三门峡市</option><option>鹤壁市</option><option>济源市</option>
+          </select>
+          <select>
+            <option selected>全部</option>
+            <option>大规模</option><option>中等规模</option><option>小规模</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 罐区列表 -->
+    <div class="card" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+      <div class="card-header">
+        <i class="fa-solid fa-list-ul"></i> 罐区列表
+      </div>
+      <div class="tank-list-wrap" id="tankListWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>详细地址</th><th>所属区域</th>
+              <th>停留次数</th><th>车辆数</th><th>规模</th>
+            </tr>
+          </thead>
+          <tbody id="tankListBody"></tbody>
+        </table>
+      </div>
+      <div class="list-footer">显示 <strong>28</strong> / <strong>356</strong> 个罐区</div>
+    </div>
+  </aside>
+
+  <!-- ===== 中间面板：地图 ===== -->
+  <main class="center-panel">
+    <div class="map-container" id="mapContainer">
+      <canvas id="henanMap"></canvas>
+      <div class="map-tooltip" id="mapTooltip">
+        <div class="tt-city"></div>
+        <div class="tt-count"></div>
+      </div>
+    </div>
+    <div class="map-footer">全省罐区分布总览 · 共 <strong>356</strong> 个罐区</div>
+  </main>
+
+  <!-- ===== 右侧面板：统计概览 ===== -->
+  <aside class="right-panel">
+    <!-- 统计卡片 -->
+    <div class="stat-card">
+      <div class="stat-icon"><i class="fa-solid fa-gas-pump"></i></div>
+      <div class="stat-info">
+        <div class="stat-label">罐区总数</div>
+        <div class="stat-value">356</div>
+      </div>
+    </div>
+
+    <!-- 各地市罐区数量分布 - 横向柱状图 -->
+    <div class="chart-box">
+      <div class="card-header"><i class="fa-solid fa-chart-bar"></i> 各地市罐区数量分布</div>
+      <div class="chart-inner" id="barChart"></div>
+    </div>
+
+    <!-- 各地市罐区规模分布 - 环形图 -->
+    <div class="chart-box">
+      <div class="card-header"><i class="fa-solid fa-chart-pie"></i> 罐区规模分布</div>
+      <div class="chart-inner" id="donutChart"></div>
+    </div>
+  </aside>
+</div>
+
+<!-- ========== JavaScript ========== -->
+<script>
+// ==================== 模拟数据 ====================
+
+// 河南地市数据（用于热力图 & 柱状图）
+const cityData = [
+  { name: '南阳市',    count: 48, cx: 200, cy: 360 },
+  { name: '郑州市',    count: 42, cx: 310, cy: 220 },
+  { name: '洛阳市',    count: 35, cx: 180, cy: 210 },
+  { name: '周口市',    count: 30, cx: 440, cy: 290 },
+  { name: '商丘市',    count: 28, cx: 520, cy: 220 },
+  { name: '信阳市',    count: 26, cx: 400, cy: 415 },
+  { name: '驻马店市',  count: 24, cx: 370, cy: 350 },
+  { name: '新乡市',    count: 22, cx: 340, cy: 160 },
+  { name: '开封市',    count: 20, cx: 390, cy: 225 },
+  { name: '安阳市',    count: 18, cx: 370, cy: 55  },
+  { name: '濮阳市',    count: 16, cx: 490, cy: 70  },
+  { name: '许昌市',    count: 14, cx: 330, cy: 260 },
+  { name: '平顶山市',  count: 12, cx: 260, cy: 290 },
+  { name: '焦作市',    count: 10, cx: 260, cy: 170 },
+  { name: '三门峡市',  count: 8,  cx: 100, cy: 140 },
+  { name: '漯河市',    count: 6,  cx: 350, cy: 315 },
+  { name: '鹤壁市',    count: 4,  cx: 385, cy: 120 },
+  { name: '济源市',    count: 3,  cx: 210, cy: 130 },
+];
+
+// 罐区规模分布（用于环形图）
+const scaleDistribution = [
+  { name: '大规模',   value: 42,  pct: '11.8%' },
+  { name: '中等规模', value: 128, pct: '36.0%' },
+  { name: '小规模',   value: 186, pct: '52.2%' },
+];
+
+// 罐区列表数据（28条，按停留次数降序排列）
+const tankFarmList = [
+  { addr: '南阳市卧龙区光武街道石化路北段168号',       area: '南阳市卧龙区',   stays: 487, vehicles: 94, scale: '大规模'   },
+  { addr: '郑州市新郑市龙湖镇双湖大道与107国道交叉口', area: '郑州市新郑市',   stays: 452, vehicles: 88, scale: '大规模'   },
+  { addr: '洛阳市涧西区建设路与武汉路交叉口东200米',    area: '洛阳市涧西区',   stays: 421, vehicles: 79, scale: '大规模'   },
+  { addr: '周口市川汇区交通大道与八一路交叉口南侧',     area: '周口市川汇区',   stays: 398, vehicles: 72, scale: '大规模'   },
+  { addr: '南阳市宛城区仲景街道滨河路中段加油站旁',     area: '南阳市宛城区',   stays: 376, vehicles: 68, scale: '大规模'   },
+  { addr: '商丘市梁园区平原路与锦绣路交叉口北100米',    area: '商丘市梁园区',   stays: 355, vehicles: 65, scale: '大规模'   },
+  { addr: '郑州市管城回族区航海东路与中州大道交汇处',   area: '郑州市管城区',   stays: 338, vehicles: 61, scale: '中等规模' },
+  { addr: '信阳市浉河区工区路与新华东路交叉口附近',     area: '信阳市浉河区',   stays: 312, vehicles: 58, scale: '中等规模' },
+  { addr: '驻马店市驿城区雪松大道与乐山大道交叉口',     area: '驻马店市驿城区', stays: 295, vehicles: 55, scale: '中等规模' },
+  { addr: '洛阳市洛龙区开元大道与龙门大道交叉口西侧',   area: '洛阳市洛龙区',   stays: 278, vehicles: 52, scale: '中等规模' },
+  { addr: '新乡市红旗区平原路与劳动路交叉口东150米',    area: '新乡市红旗区',   stays: 264, vehicles: 49, scale: '中等规模' },
+  { addr: '开封市鼓楼区中山路与省府西街交叉口北段',     area: '开封市鼓楼区',   stays: 248, vehicles: 46, scale: '中等规模' },
+  { addr: '南阳市邓州市新华中路与交通路交叉口加油站',   area: '南阳市邓州市',   stays: 235, vehicles: 43, scale: '中等规模' },
+  { addr: '安阳市文峰区文峰大道与中华路交叉口附近',     area: '安阳市文峰区',   stays: 220, vehicles: 40, scale: '中等规模' },
+  { addr: '濮阳市华龙区石化路与大庆路交叉口北段200米',  area: '濮阳市华龙区',   stays: 208, vehicles: 38, scale: '中等规模' },
+  { addr: '郑州市中牟县商都大道与万三路交叉口东侧',     area: '郑州市中牟县',   stays: 195, vehicles: 35, scale: '中等规模' },
+  { addr: '许昌市魏都区许继大道与延安路交叉口西段',     area: '许昌市魏都区',   stays: 182, vehicles: 34, scale: '小规模'   },
+  { addr: '商丘市睢阳区神火大道与南京路交叉口南100米',  area: '商丘市睢阳区',   stays: 168, vehicles: 31, scale: '小规模'   },
+  { addr: '平顶山市新华区建设路与光明路交叉口附近',     area: '平顶山市新华区', stays: 155, vehicles: 28, scale: '小规模'   },
+  { addr: '周口市项城市交通路与工业路交叉口西侧',       area: '周口市项城市',   stays: 142, vehicles: 26, scale: '小规模'   },
+  { addr: '焦作市解放区解放路与塔南路交叉口东100米',    area: '焦作市解放区',   stays: 130, vehicles: 24, scale: '小规模'   },
+  { addr: '信阳市平桥区平中大街与龙江大道交叉口附近',   area: '信阳市平桥区',   stays: 118, vehicles: 21, scale: '小规模'   },
+  { addr: '三门峡市湖滨区黄河路与六峰路交叉口南侧',     area: '三门峡市湖滨区', stays: 105, vehicles: 19, scale: '小规模'   },
+  { addr: '漯河市源汇区人民路与交通路交叉口附近加油站', area: '漯河市源汇区',   stays: 92,  vehicles: 17, scale: '小规模'   },
+  { addr: '驻马店市确山县龙山路与解放路交叉口北段',     area: '驻马店市确山县', stays: 80,  vehicles: 15, scale: '小规模'   },
+  { addr: '鹤壁市淇滨区兴鹤大街与九州路交叉口东侧',     area: '鹤壁市淇滨区',   stays: 68,  vehicles: 12, scale: '小规模'   },
+  { addr: '新乡市辉县市共城大道与九山路交叉口附近',     area: '新乡市辉县市',   stays: 55,  vehicles: 10, scale: '小规模'   },
+  { addr: '济源市济水街道宣化街与文昌路交叉口西100米',  area: '济源市济水街道', stays: 42,  vehicles: 8,  scale: '小规模'   },
+];
+
+// ==================== 工具函数 ====================
+
+/** 判断点是否在多边形内部（射线法） */
+function pointInPolygon(px, py, polygon) {
+  let inside = false;
+  const n = polygon.length;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const xi = polygon[i][0], yi = polygon[i][1];
+    const xj = polygon[j][0], yj = polygon[j][1];
+    if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+/** 根据罐区数量返回热力图颜色（蓝色系深浅） */
+function getHeatColor(count) {
+  if (count >= 43) return '#0d4fb3'; // 最深蓝
+  if (count >= 35) return '#1a66d4';
+  if (count >= 27) return '#2f7de0';
+  if (count >= 19) return '#5b99eb';
+  if (count >= 13) return '#8ab9f0';
+  if (count >= 6)  return '#b8d4f5';
+  return '#dce8f7';                   // 最浅蓝
+}
+
+// ==================== 1. Canvas 河南热力图 ====================
+
+(function initMap() {
+  const container = document.getElementById('mapContainer');
+  const canvas = document.getElementById('henanMap');
+  const ctx = canvas.getContext('2d');
+  const tooltip = document.getElementById('mapTooltip');
+
+  const CELL_SIZE = 20;          // 网格单元格大小
+  const COLS = 32, ROWS = 23;    // 网格列数/行数
+  const W = COLS * CELL_SIZE;    // 640
+  const H = ROWS * CELL_SIZE;    // 460
+
+  // 设置 Canvas 物理尺寸
+  canvas.width = W;
+  canvas.height = H;
+
+  // 简化的河南省轮廓（顺时针，Canvas 坐标系）
+  const henanOutline = [
+    [55, 85],   // NW
+    [100, 40],  // N
+    [200, 28],  // N (Jiyuan/Jiaozuo)
+    [300, 22],  // N (Xinxiang)
+    [380, 30],  // N (Anyang)
+    [470, 42],  // NE (Puyang bulge)
+    [535, 58],  // NE corner
+    [575, 105], // E
+    [598, 165], // E (Shangqiu ext.)
+    [582, 235], // E
+    [552, 315], // SE (Zhoukou)
+    [502, 385], // S
+    [445, 435], // S (Zhumadian)
+    [398, 452], // S (Xinyang ext.)
+    [338, 446], // S
+    [228, 410], // SW (Nanyang)
+    [128, 350], // SW
+    [68, 278],  // W
+    [54, 198],  // W (Luoyang)
+    [57, 140],  // W
+  ];
+
+  // 预计算每个网格单元的城市归属
+  const cellLookup = new Array(COLS * ROWS).fill(null);
+  for (let row = 0; row < ROWS; row++) {
+    for (let col = 0; col < COLS; col++) {
+      const cx = col * CELL_SIZE + CELL_SIZE / 2;
+      const cy = row * CELL_SIZE + CELL_SIZE / 2;
+      if (!pointInPolygon(cx, cy, henanOutline)) continue;
+
+      // 找到最近的城市
+      let minDist = Infinity, nearestIdx = -1;
+      cityData.forEach((city, idx) => {
+        const dx = cx - city.cx, dy = cy - city.cy;
+        const dist = dx * dx + dy * dy;
+        if (dist < minDist) { minDist = dist; nearestIdx = idx; }
+      });
+      cellLookup[row * COLS + col] = nearestIdx;
+    }
+  }
+
+  // 绘制地图
+  function drawMap() {
+    ctx.clearRect(0, 0, W, H);
+
+    // 背景
+    ctx.fillStyle = '#f9fafb';
+    ctx.fillRect(0, 0, W, H);
+
+    // 绘制网格色块
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const cityIdx = cellLookup[row * COLS + col];
+        if (cityIdx === null) continue;
+
+        const count = cityData[cityIdx].count;
+        ctx.fillStyle = getHeatColor(count);
+        ctx.fillRect(col * CELL_SIZE + 1, row * CELL_SIZE + 1, CELL_SIZE - 2, CELL_SIZE - 2);
+      }
+    }
+
+    // 绘制河南省轮廓线
+    ctx.beginPath();
+    ctx.moveTo(henanOutline[0][0], henanOutline[0][1]);
+    for (let i = 1; i < henanOutline.length; i++) {
+      ctx.lineTo(henanOutline[i][0], henanOutline[i][1]);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = '#1a3a5c';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(0,0,0,0.0)'; // 透明填充让色块可见
+
+    // 标记城市标签（仅较大城市）
+    const majorCities = ['郑州市', '洛阳市', '南阳市', '开封市', '新乡市', '周口市'];
+    cityData.filter(c => majorCities.includes(c.name)).forEach(city => {
+      ctx.fillStyle = '#1a1a2e';
+      ctx.font = '600 11px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(city.name, city.cx, city.cy);
+    });
+  }
+
+  drawMap();
+
+  // 鼠标悬停 - Tooltip
+  canvas.addEventListener('mousemove', function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = W / rect.width;
+    const scaleY = H / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top) * scaleY;
+
+    const col = Math.floor(mx / CELL_SIZE);
+    const row = Math.floor(my / CELL_SIZE);
+
+    if (col < 0 || col >= COLS || row < 0 || row >= ROWS) {
+      tooltip.style.display = 'none';
+      return;
+    }
+
+    const cityIdx = cellLookup[row * COLS + col];
+    if (cityIdx === null) {
+      tooltip.style.display = 'none';
+      return;
+    }
+
+    const city = cityData[cityIdx];
+    tooltip.querySelector('.tt-city').textContent = city.name;
+    tooltip.querySelector('.tt-count').textContent = '罐区数量：' + city.count + ' 座';
+    tooltip.style.display = 'block';
+
+    // 定位 tooltip 在容器内
+    const containerRect = container.getBoundingClientRect();
+    let left = (col * CELL_SIZE) / scaleX + CELL_SIZE / scaleX / 2;
+    let top  = (row * CELL_SIZE) / scaleY - 8;
+
+    // 防止溢出
+    if (left + 120 > containerRect.width) left -= 130;
+    if (top < 20) top = 10;
+
+    tooltip.style.left = left + 'px';
+    tooltip.style.top  = top + 'px';
+  });
+
+  canvas.addEventListener('mouseleave', function() {
+    tooltip.style.display = 'none';
+  });
+
+  // 响应窗口大小变化
+  window.addEventListener('resize', drawMap);
+})();
+
+
+// ==================== 2. ECharts 横向柱状图 ====================
+
+(function initBarChart() {
+  const dom = document.getElementById('barChart');
+  const chart = echarts.init(dom);
+
+  // 按数量降序排列
+  const sorted = [...cityData].sort((a, b) => b.count - a.count);
+
+  const option = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: function(p) { return p[0].name + '<br/>罐区数量：<b>' + p[0].value + '</b> 座'; }
+    },
+    grid: { left: 90, right: 36, top: 8, bottom: 8, containLabel: false },
+    xAxis: {
+      type: 'value',
+      axisLine: { show: false },
+      axisTick: { show: false },
+      splitLine: { lineStyle: { color: '#f0f2f5', type: 'dashed' } },
+      axisLabel: { color: '#999', fontSize: 11 },
+      name: '罐区数量（座）',
+      nameTextStyle: { color: '#aaa', fontSize: 10 }
+    },
+    yAxis: {
+      type: 'category',
+      inverse: true,
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { color: '#555', fontSize: 11, fontWeight: 500 },
+      data: sorted.map(c => c.name)
+    },
+    series: [{
+      type: 'bar',
+      data: sorted.map(c => ({
+        value: c.count,
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+            { offset: 0, color: '#1a73e8' },
+            { offset: 1, color: '#7bb5f5' }
+          ]),
+          borderRadius: [0, 6, 6, 0],
+        }
+      })),
+      barWidth: 16,
+      label: {
+        show: true, position: 'right', fontSize: 10, color: '#666',
+        formatter: '{c}'
+      },
+      emphasis: {
+        itemStyle: { color: '#0d4fb3' }
+      }
+    }]
+  };
+
+  chart.setOption(option);
+  window.addEventListener('resize', () => chart.resize());
+})();
+
+
+// ==================== 3. ECharts 环形图（罐区规模分布） ====================
+
+(function initDonutChart() {
+  const dom = document.getElementById('donutChart');
+  const chart = echarts.init(dom);
+
+  const colors = ['#1a73e8', '#f0a050', '#6ec072'];
+  const total = scaleDistribution.reduce((s, d) => s + d.value, 0);
+
+  const option = {
+    tooltip: {
+      trigger: 'item',
+      formatter: function(p) {
+        return p.name + '<br/>数量：<b>' + p.value + '</b> 座（' + p.percent + '%）';
+      }
+    },
+    legend: {
+      bottom: 0, left: 'center', itemWidth: 10, itemHeight: 10,
+      textStyle: { fontSize: 11, color: '#666' },
+      formatter: function(name) {
+        const item = scaleDistribution.find(d => d.name === name);
+        return name + '  ' + (item ? item.value + '个 ' + item.pct : '');
+      }
+    },
+    series: [{
+      type: 'pie',
+      radius: ['58%', '78%'],
+      center: ['50%', '46%'],
+      avoidLabelOverlap: false,
+      itemStyle: { borderColor: '#fff', borderWidth: 3, borderRadius: 2 },
+      label: { show: false },
+      emphasis: { scaleSize: 8 },
+      data: scaleDistribution.map((d, i) => ({
+        value: d.value, name: d.name,
+        itemStyle: { color: colors[i] }
+      }))
+    }],
+    graphic: [
+      // 环形图中心文字
+      {
+        type: 'text',
+        left: 'center', top: '38%',
+        style: { text: total, fontSize: 28, fontWeight: 700, fill: '#1a1a2e',
+                 fontFamily: 'system-ui, -apple-system, sans-serif' }
+      },
+      {
+        type: 'text',
+        left: 'center', top: '48%',
+        style: { text: '罐区总数', fontSize: 11, fill: '#999',
+                 fontFamily: 'system-ui, -apple-system, sans-serif' }
+      }
+    ]
+  };
+
+  chart.setOption(option);
+  window.addEventListener('resize', () => chart.resize());
+})();
+
+
+// ==================== 4. 渲染罐区列表 ====================
+
+(function renderList() {
+  const tbody = document.getElementById('tankListBody');
+  tankFarmList.forEach((item, i) => {
+    const tr = document.createElement('tr');
+    const shortAddr = item.addr.length > 20 ? item.addr.slice(0, 20) + '…' : item.addr;
+    const scaleTag = item.scale === '大规模'
+      ? '<span class="scale-tag tag-large">大规模</span>'
+      : item.scale === '中等规模'
+        ? '<span class="scale-tag tag-medium">中等规模</span>'
+        : '<span class="scale-tag tag-small">小规模</span>';
+
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td class="addr-cell" title="${item.addr}">${shortAddr}</td>
+      <td>${item.area}</td>
+      <td>${item.stays}</td>
+      <td>${item.vehicles}</td>
+      <td>${scaleTag}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+})();
+</script>
+
+</body>
+</html>

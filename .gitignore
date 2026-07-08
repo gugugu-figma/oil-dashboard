@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.codex-git/
+.git/
+.agents/
+backup-*/
+vite-dev*.log
+vite-dev.pid
+codex-write-test.tmp
+assets/generated/*-source.png
